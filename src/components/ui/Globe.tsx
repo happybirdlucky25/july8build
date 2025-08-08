@@ -36,7 +36,7 @@ export default function Globe(props: {
     restDelta: 0.001,
   });
 
-  const { width, height, onRender, markers, ...restConfig } = config || {};
+  const { onRender, markers, ...restConfig } = config || {};
 
   useEffect(() => {
     let phi = 0;
@@ -69,12 +69,16 @@ export default function Globe(props: {
         state.phi = phi + r.get();
         state.width = width * 2;
         state.height = width * 2;
-        onRender && onRender(state);
+        onRender?.(state);
       },
     });
-    setTimeout(() => (canvasRef.current!.style.opacity = "1"));
+    setTimeout(() => {
+      if (canvasRef.current) {
+        canvasRef.current.style.opacity = "1";
+      }
+    });
     return () => globe.destroy();
-  }, []);
+  }, [markers, onRender, restConfig, r]);
 
   return (
     <div

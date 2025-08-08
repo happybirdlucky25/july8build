@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { bills, people } from "@/data/mockData";
 import { listTrackedBillsNotInCampaign, listTrackedLegislatorsNotInCampaign, linkBillToCampaign, linkLegislatorToCampaign } from "@/utils/campaignUtils";
 
@@ -26,19 +26,19 @@ export default function TrackedItemsPicker({
   const [availableBillIds, setAvailableBillIds] = useState<string[]>([]);
   const [availablePeopleIds, setAvailablePeopleIds] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadAvailableItems();
-    }
-  }, [isOpen, campaignId]);
-
-  const loadAvailableItems = () => {
+  const loadAvailableItems = useCallback(() => {
     const availableBills = listTrackedBillsNotInCampaign(campaignId);
     const availableLegislators = listTrackedLegislatorsNotInCampaign(campaignId);
     
     setAvailableBillIds(availableBills);
     setAvailablePeopleIds(availableLegislators);
-  };
+  }, [campaignId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadAvailableItems();
+    }
+  }, [isOpen, loadAvailableItems]);
 
   const availableBills = bills.filter(bill => availableBillIds.includes(bill.bill_id));
   const availableLegislators = people.filter(person => availablePeopleIds.includes(person.people_id));

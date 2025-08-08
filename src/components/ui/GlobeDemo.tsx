@@ -57,7 +57,7 @@ export function GlobeDemo() {
       }
     });
     return () => globe.destroy();
-  }, []);
+  }, [r]);
 
   return (
     <div className="App">

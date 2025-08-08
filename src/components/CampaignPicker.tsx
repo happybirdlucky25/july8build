@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Campaign } from "@/types/campaign";
 import { listUserCampaigns, linkBillToCampaign, linkLegislatorToCampaign, isBillInCampaign, isLegislatorInCampaign } from "@/utils/campaignUtils";
 
@@ -28,26 +28,33 @@ export default function CampaignPicker({
   const [newCampaignDescription, setNewCampaignDescription] = useState("");
   const [createError, setCreateError] = useState("");
 
+  const loadCampaigns = useCallback(() => {
+    const userCampaigns = listUserCampaigns();
+    setCampaigns(userCampaigns);
+    
+    // Check which campaigns already contain this item
+    const alreadyInCampaigns: number[] = [];
+    
+    userCampaigns.forEach(campaign => {
+      if (mode === "bill") {
+        if (isBillInCampaign(itemId, campaign.id)) {
+          alreadyInCampaigns.push(campaign.id);
+        }
+      } else {
+        if (isLegislatorInCampaign(itemId, campaign.id)) {
+          alreadyInCampaigns.push(campaign.id);
+        }
+      }
+    });
+    
+    setSelectedCampaignIds(alreadyInCampaigns);
+  }, [mode, itemId]);
+
   useEffect(() => {
     if (isOpen) {
       loadCampaigns();
     }
-  }, [isOpen]);
-
-  const loadCampaigns = () => {
-    const userCampaigns = listUserCampaigns();
-    setCampaigns(userCampaigns);
-    
-    // Pre-select campaigns that already contain this item
-    const alreadyInCampaigns = userCampaigns.filter(campaign => {
-      if (mode === "bill") {
-        return isBillInCampaign(itemId, campaign.campaign_id);
-      } else {
-        return isLegislatorInCampaign(itemId, campaign.campaign_id);
-      }
-    });
-    setSelectedCampaignIds(alreadyInCampaigns.map(c => c.campaign_id));
-  };
+  }, [isOpen, loadCampaigns]);
 
   const filteredCampaigns = campaigns.filter(campaign =>
     campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
