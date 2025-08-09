@@ -1,48 +1,55 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import SearchBar from "@/components/SearchBar";
 import BillCard from "@/components/BillCard";
-import { bills, bill_summaries } from "@/data/mockData";
+import { searchBills, type CongressBill } from "@/lib/congress-api";
 
 export default function SearchLegislation() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [bills, setBills] = useState<CongressBill[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Filter bills based on search query
-  const filteredBills = useMemo(() => {
-    if (!searchQuery.trim()) return bills;
-    
-    const query = searchQuery.toLowerCase();
-    return bills.filter(bill => 
-      bill.title.toLowerCase().includes(query) ||
-      bill.bill_number.toLowerCase().includes(query) ||
-      bill.description.toLowerCase().includes(query) ||
-      bill.status.toLowerCase().includes(query)
-    );
+  // Search bills when query changes
+  useEffect(() => {
+    const searchBillsAsync = async () => {
+      setIsLoading(true);
+      try {
+        const results = await searchBills(searchQuery);
+        setBills(results);
+      } catch (error) {
+        console.error('Error searching bills:', error);
+        setBills([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    searchBillsAsync();
   }, [searchQuery]);
 
-  // Get summary for a bill
+  // Get summary for a bill (simplified for now)
   const getBillSummary = (billId: string) => {
-    const summary = bill_summaries.find(s => s.bill_id === billId);
-    return summary?.summary_text;
+    const bill = bills.find(b => b.bill_id === billId);
+    return bill?.full_text.substring(0, 150) + "...";
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-                  {/* Google AdSense Ad */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-8">
-              <ins 
-                className="adsbygoogle"
-                style={{ display: 'block' }}
-                data-ad-client="ca-pub-5431445907349741"
-                data-ad-slot="1234567891"
-                data-ad-format="auto"
-                data-full-width-responsive="true"
-              />
-              <script>
-                (adsbygoogle = window.adsbygoogle || []).push({});
-              </script>
-            </div>
+      {/* Google AdSense Ad */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-8">
+        <ins 
+          className="adsbygoogle"
+          style={{ display: 'block' }}
+          data-ad-client="ca-pub-5431445907349741"
+          data-ad-slot="1234567891"
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
+        <script>
+          (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+      </div>
 
       {/* Header */}
       <div className="text-center mb-8">
@@ -61,15 +68,20 @@ export default function SearchLegislation() {
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
           {searchQuery.trim() ? (
-            <>Results for &quot;{searchQuery}&quot; ({filteredBills.length} found)</>
+            <>Results for &quot;{searchQuery}&quot; ({bills.length} found)</>
           ) : (
-            <>All Bills ({filteredBills.length} total)</>
+            <>Recent Bills ({bills.length} total)</>
           )}
         </h2>
       </div>
 
-      {/* Bills Grid */}
-      {filteredBills.length === 0 ? (
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-500 mt-4">Searching bills...</p>
+        </div>
+      ) : bills.length === 0 ? (
         <div className="text-center py-12">
           <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -79,7 +91,7 @@ export default function SearchLegislation() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredBills.map((bill) => (
+          {bills.map((bill) => (
             <BillCard
               key={bill.bill_id}
               bill_id={bill.bill_id}
